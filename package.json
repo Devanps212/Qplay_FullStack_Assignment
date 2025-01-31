@@ -4,7 +4,6 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "postinstall": "npm install --legacy-peer-deps",
     "start": "nodemon dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,7 +13,7 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
-    "cloudinary": "^2.5.1",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -33,6 +32,7 @@
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/morgan": "^1.9.9",
     "@types/multer": "^1.4.12",
+    "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }
