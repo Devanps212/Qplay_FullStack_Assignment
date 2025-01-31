@@ -5,6 +5,6 @@ import upload from "../config/multerConfig"
 const videoRouter = expres.Router()
 
 videoRouter.post('/upload', upload.single("file"), addVideo)
-videoRouter.get('/getVideos/:_id?', getVideos)
+videoRouter.get('/getVideos', getVideos)
 
 export default videoRouter

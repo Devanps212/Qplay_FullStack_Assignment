@@ -12,17 +12,7 @@ import expressAsyncHandler from "express-async-handler";
 const getVideos = expressAsyncHandler(
   async (req: Request, res: Response) => {
     try { 
-
-      console.log("reached controller")
-      let video;
-      const videoId = req.params._id
-
-      if (videoId) {
-        video = await videoModel.findById({_id: videoId})
-      } else {
-        video = await videoModel.find()
-      }
-
+      const video = await videoModel.find()
       res.status(200).json({message:"Data retrieved successfully", video})
 
     } catch (error: unknown) {
