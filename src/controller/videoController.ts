@@ -28,69 +28,88 @@ const getVideos = expressAsyncHandler(
 
 
 const addVideo = expressAsyncHandler(
-  async(req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-  
+      console.log('Start video upload and processing...')
+
       const uniqueId = uuidv4()
       const videoPath = req.file?.path
       const outputPath = path.join(__dirname, "..", "uploads", "files", uniqueId)
-  
+
+      console.log('Video path:', videoPath)
+      
       if (!videoPath) {
+        console.log('No video file provided')
         res.status(400).json({ message: "No video file provided." })
         return
       }
-  
+
       let videoDuration = 0
+      console.log('Extracting video metadata...')
       await new Promise<void>((resolve, reject) => {
         ffmpeg.ffprobe(videoPath, (err, metadata) => {
-          if (err) return reject(err)
-  
+          if (err) {
+            console.error('Error extracting video metadata:', err)
+            return reject(err)
+          }
+
           videoDuration = metadata.format.duration || 0
+          console.log('Video duration:', videoDuration)
           resolve()
         })
       })
-  
+
       if (!fs.existsSync(outputPath)) {
+        console.log('Creating output directory:', outputPath)
         fs.mkdirSync(outputPath, { recursive: true })
       }
-  
+
       const thumbnailPath = path.join(outputPath, "thumbnail.jpg")
+      console.log('Generating thumbnail...')
       ffmpeg(videoPath)
         .on("end", async () => {
+          console.log('Thumbnail extraction complete, uploading to Cloudinary...')
           cloudinary.uploader.upload(thumbnailPath, { folder: "video_thumbnails" }, async (error, result) => {
             if (error) {
-              console.error("Error uploading to Cloudinary: ", error)
+              console.error("Error uploading to Cloudinary:", error)
               res.status(500).json({ message: "Error uploading thumbnail to Cloudinary." })
               return
             }
-  
+
             const thumbnailUrl = result?.secure_url
-  
+            console.log('Thumbnail uploaded, URL:', thumbnailUrl)
+
             const resolutions = [
               { width: 426, height: 240, bitrate: "400k", resolution: "240p" },
               { width: 854, height: 480, bitrate: "1200k", resolution: "480p" },
               { width: 1280, height: 720, bitrate: "2500k", resolution: "720p" },
               { width: 1920, height: 1080, bitrate: "5000k", resolution: "1080p" },
             ]
-  
+
+            console.log('Processing HLS commands for resolutions:', resolutions)
+
             const hlsCommands = resolutions.map((res) => {
               const resolutionOutputPath = `${outputPath}/${res.resolution}`
               if (!fs.existsSync(resolutionOutputPath)) {
                 fs.mkdirSync(resolutionOutputPath, { recursive: true })
               }
-  
+
               return `ffmpeg -i ${videoPath} -vf "scale=${res.width}:${res.height}" -b:v ${res.bitrate} -codec:a aac -hls_time 10 -hls_playlist_type vod -hls_segment_filename "${resolutionOutputPath}/segment%03d.ts" -start_number 0 ${resolutionOutputPath}/index.m3u8`
             })
-  
+
+            console.log('Executing HLS commands...')
             exec(hlsCommands.join(" && "), async (error, stdout, stderr) => {
               if (error) {
+                console.error('Error executing HLS commands:', error, stderr)
                 res.status(500).json({ message: "Error processing video." })
                 return
               }
-  
+
+              console.log('HLS commands executed successfully')
+
               const masterPlaylistPath = `${outputPath}/index.m3u8`
               let masterPlaylistContent = "#EXTM3U\n#EXT-X-VERSION:3\n"
-  
+
               resolutions.forEach((res) => {
                 masterPlaylistContent += `#EXT-X-STREAM-INF:BANDWIDTH=${res.bitrate.replace(
                   "k",
@@ -98,13 +117,12 @@ const addVideo = expressAsyncHandler(
                 )}000,RESOLUTION=${res.width}x${res.height}\n`
                 masterPlaylistContent += `/uploads/files/${uniqueId}/${res.resolution}/index.m3u8\n`
               })
-  
+
               fs.writeFileSync(masterPlaylistPath, masterPlaylistContent)
-  
-              const videoUrl = `${req.protocol}://${req.get(
-                "host"
-              )}/uploads/files/${uniqueId}/index.m3u8`
-  
+
+              const videoUrl = `${req.protocol}://${req.get("host")}/uploads/files/${uniqueId}/index.m3u8`
+              console.log('Video URL:', videoUrl)
+
               const videoData = {
                 title: req.body.title,
                 thumbnail: thumbnailUrl,
@@ -130,10 +148,13 @@ const addVideo = expressAsyncHandler(
                 ],
                 isActive: true,
               }
-  
+
+              console.log('Saving video to database...')
               const newVideo = new videoModel(videoData)
               await newVideo.save()
-  
+
+              console.log('Video uploaded and processed successfully')
+
               res.status(201).json({
                 message: "Video uploaded and processed successfully.",
                 video: newVideo,
@@ -142,7 +163,7 @@ const addVideo = expressAsyncHandler(
           })
         })
         .on("error", (err) => {
-          console.error("Error extracting thumbnail: ", err)
+          console.error("Error extracting thumbnail:", err)
           res.status(500).json({ message: "Error extracting thumbnail." })
         })
         .screenshots({
@@ -151,13 +172,13 @@ const addVideo = expressAsyncHandler(
           folder: outputPath,
         })
     } catch (error) {
-      console.log(error)
-      if(error instanceof Error) {
-        res.status(500).json({message: error.message})
+      console.log('Error in addVideo function:', error)
+      if (error instanceof Error) {
+        res.status(500).json({ message: error.message })
         return
       }
 
-      res.status(500).json({message: "Internal Server error"})
+      res.status(500).json({ message: "Internal Server error" })
     }
   }
 )
