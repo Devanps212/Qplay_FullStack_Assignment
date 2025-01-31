@@ -7,7 +7,8 @@ const configData = {
     MONGO_URI: process.env.MONGO_URI,
     CLOUD_NAME: process.env.CLOUD_NAME,
     CLOUD_KEY: process.env.CLOUD_KEY,
-    CLOUD_SECRET: process.env.CLOUD_SECRET_KEY
+    CLOUD_SECRET: process.env.CLOUD_SECRET_KEY,
+    FRONTEND_URL: process.env.FRONT_END_URL
 }
 
 export default configData

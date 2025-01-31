@@ -11,9 +11,15 @@ const PORT = configData.PORT || 5000
 const app = express()
 connectDB()
 
+
 const options = {
-    origin: '*',
-    methods: ['PUT', 'GET']
+    origin: configData.FRONTEND_URL,
+    methods: ['POST', 'GET'],
+    exposedHeaders: [
+        "Cross-Origin-Opener-Policy",
+        "Cross-Origin-Resource-Policy",
+        "Access-Control-Allow-Origin",
+    ]
 }
 
 

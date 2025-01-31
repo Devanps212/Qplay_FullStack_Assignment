@@ -26,7 +26,7 @@ const getVideos = expressAsyncHandler(
       res.status(200).json({message:"Data retrieved successfully", video})
 
     } catch (error: unknown) {
-      if(error instanceof Error) {
+      if (error instanceof Error) {
         res.status(500).json({message: error.message})
         return
       }
@@ -106,7 +106,7 @@ const addVideo = expressAsyncHandler(
                   "k",
                   ""
                 )}000,RESOLUTION=${res.width}x${res.height}\n`
-                masterPlaylistContent += `/${uniqueId}/${res.resolution}/index.m3u8\n`
+                masterPlaylistContent += `/uploads/files/${uniqueId}/${res.resolution}/index.m3u8\n`
               })
   
               fs.writeFileSync(masterPlaylistPath, masterPlaylistContent)
