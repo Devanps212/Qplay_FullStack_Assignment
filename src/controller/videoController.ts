@@ -151,6 +151,7 @@ const addVideo = expressAsyncHandler(
           folder: outputPath,
         })
     } catch (error) {
+      console.log(error)
       if(error instanceof Error) {
         res.status(500).json({message: error.message})
         return
